@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>URL Shortener</title>
+  <style>
+    html {
+      font-size: calc(10px + 0.7vw);
+      font-family: sans-serif;
+      color: #333;
+      background: #0b1736;
+    }
+        
+    @media (min-width: 800px) {
+      html {
+        font-size: 18px
+      }
+    }
+    
+    main {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      text-align: center;
+      color: white;
+    }
+    
+    .url-input-and-button {
+      border: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+    }
+
+    input,
+    button,
+    #shortened-urls {
+      font-size: 1.5rem;
+      border-radius: 0.5rem;
+      border: none;
+    }
+
+    input,
+    button,
+    .shortened-url {
+      padding: 1rem 1.5rem;
+    }
+    
+    input {
+      display: block;
+      width: 100%;
+    }
+    
+    button {
+      display: block;
+      white-space: nowrap;
+      margin-left: 1rem;
+      padding: 0 3rem;
+      cursor: pointer;
+      background-color: #1b3987;
+      color: white;
+    }
+    
+    #error {
+      font-weight: bold;
+      color: red;
+      padding: 0 1rem;
+      font-size: 1.2rem
+    }
+    
+    #shortened-urls {
+      background: white;
+      padding: 0;
+    }
+    
+    #shortened-urls .shortened-url {
+      display: flex;
+      justify-content: space-between;
+      border: dashed 0 #0b1736;
+      border-bottom-width: 0.2rem;
+    }
+    
+    #shortened-urls .shortened-url:last-child {
+      border-bottom-width: 0;
+    }
+
+    #shortened-urls .shortened-url .original-url,
+    #shortened-urls .shortened-url .link-and-copy-button a {
+      line-height: 3rem;
+      overflow: hidden;
+      display: block;
+      text-overflow: ellipsis;
+      font-size: 1.1rem;
+    }
+
+    #shortened-urls .shortened-url .original-url {
+      margin-right: 1rem;
+    }    
+
+    #shortened-urls .shortened-url .link-and-copy-button {
+      display: flex;
+    }
+        
+    #shortened-urls .shortened-url .link-and-copy-button a {
+      text-decoration: none;
+      text-align: right;
+    }
+        
+    #shortened-urls .shortened-url .link-and-copy-button button {
+      font-size: 1rem;
+      padding: 0 1rem;
+    }
+    
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>URL Shortener</h1>
+  
+    <form>
+      <div class="url-input-and-button">
+        <input id="url-to-shorten" type="text" placeholder="Shorten your URL"/>
+        <button onClick="generateToken(); return false;">Shorten</button>
+      </div>
+      <p id="error"></p>
+      <div id="shortened-urls"></div>
+    </form>
+  </main>
+  
+  <script>
+    const urlsGenerated = [];
+
+    const generateToken = () => {
+      const url = document.getElementById('url-to-shorten').value.trim();
+      
+      if (urlsGenerated.includes(url)) {
+        return;
+      }
+      
+      postData('/generate-token', { url }).then((data) => {
+        const errorElement = document.getElementById('error');
+        const shortenedUrlsElement = document.getElementById('shortened-urls');
+        
+        if (data.success === true) {
+          urlsGenerated.push(url);
+          errorElement.textContent = '';
+          shortenedUrlsElement.innerHTML = shortenedUrlsElement.innerHTML + `
+            <div class="shortened-url">
+              <div class="original-url">${url}</div>
+              <div class="link-and-copy-button">
+                <a href="${data.shortUrl}" target="_NEW">${data.shortUrl}</a>
+                <button onClick="copyShortUrlToClipboard('${data.shortUrl}'); return false;">Copy</button>
+              </div>
+            </div>
+          `;
+        } else {
+          errorElement.textContent = data.error;
+        }
+      });
+    };
+    
+    const copyShortUrlToClipboard = (shortUrl) => {
+      navigator.clipboard.writeText(shortUrl);
+      return false;
+    };
+    
+    async function postData(url, data) {
+      const response = await fetch(url, {
+        method: 'POST',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify(data)
+      });
+      return await response.json();
+    }  
+  </script>
+  
+</body>
+</html>
